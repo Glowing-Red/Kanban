@@ -1,4 +1,91 @@
+body{
+   margin: 0; 
+   padding: 0;
+}
+
 .container {
    height: auto;
    width: 100%;
+}
+
+header{
+   background-color: rgb(152, 146, 255);
+   height: 7vh;
+   width: 100%;
+}
+
+.div-container{
+   display: flex; 
+   flex-direction: row;
+   justify-content: space-evenly;
+}
+
+.area{
+   height: 70vh;
+   width: 25vw;
+   background-color: rgb(224, 222, 246);
+   display: flex; 
+   flex-direction: column;
+   border-radius: 20px;
+   overflow: hidden;
+}
+
+.text{
+   background-color: rgb(245, 245, 245);
+   text-align: center;
+}
+
+.div-button{
+   display: flex;
+   justify-content: end;
+   margin: 3% 7%;
+}
+
+button{
+   width: 8%;
+   height: 6vh;
+   background-color: rgb(237, 238, 252);
+   border-radius: 6px;
+}
+
+.pop-overlay{
+   position: fixed;
+}
+
+.pop{
+   position: fixed;
+   background-color: rgb(230, 143, 137);
+   top: 24%;
+   left: 34%;
+   height: 50%;
+   width: 23%;
+   display: flex;
+   justify-content: top;
+   align-items: center;
+   flex-direction: column;
+   padding: 4%;
+}
+
+.select{
+   background-color: white;
+   margin: 4% ;
+   width: 100%;
+   align-items: center;
+   justify-items: center;
+   padding: 2%;
+}
+
+.select h2{
+   margin: 0px;
+}
+
+input{
+   margin: 4% ;
+   width: 100%;
+   align-items: center;
+   justify-items: center;
+   padding: 2%;
+   height: 50%;
+   text-align: left;
+   vertical-align: text-top;
 }
