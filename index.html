@@ -8,10 +8,10 @@
    
    <body>
 
-      <header></header>
+      <header>Task Manager</header>
 
       <div class="div-button">
-         <button>ADD</button>
+         <button onclick="PopUp()"class="add">ADD</button>
       </div>
 
       <div class="div-container">
@@ -27,10 +27,30 @@
          </div>
       </div>
 
-      <div class="pop-overlay">
+      <div id="pop-overlay">
          <div class="pop">
-            <div class="select"><h2>Select</h2></div>
-            <textarea></textarea>
+            <div id="select">
+                <div onclick="DropDown()" class="select-menu">
+                  <h2 id="select-text">Selected: None</h2>
+                  <svg id="svg"xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-up-short" viewBox="0 0 16 16">
+                     <path id="path" fill-rule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5"/>
+                  </svg>
+                </div>
+               <div id="drop-down">
+                  <h4 onclick="Selected(this)">To do</h4>
+                  <h4 onclick="Selected(this)">Doing</h4>
+                  <h4 onclick="Selected(this)">Done</h4>
+               </div>
+            </div>
+            <div id="name" class="information">
+               <h3>Name</h3>
+               <textarea></textarea>
+            </div>
+            <div id="task" class="information">
+               <h3>Task</h3>
+               <textarea></textarea>
+            </div>
+            <button class="submit">Submit</button>
          </div>
       </div>
 

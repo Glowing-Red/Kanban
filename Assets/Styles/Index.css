@@ -12,6 +12,9 @@ header{
    background-color: rgb(152, 146, 255);
    height: 7vh;
    width: 100%;
+   display: flex;
+   justify-content: center;
+   align-items: center;
 }
 
 .div-container{
@@ -41,7 +44,7 @@ header{
    margin: 3% 7%;
 }
 
-button{
+.add{
    width: 8%;
    height: 6vh;
    background-color: rgb(237, 238, 252);
@@ -54,38 +57,94 @@ button{
 
 .pop{
    position: fixed;
-   background-color: rgb(230, 143, 137);
-   top: 24%;
-   left: 34%;
-   height: 50%;
+   background-color: rgb(235, 188, 185);
+   top: 50%;
+   left: 50%;
+   height: 56%;
    width: 23%;
    display: flex;
-   justify-content: top;
    align-items: center;
    flex-direction: column;
-   padding: 4%;
+   padding: 2%;
+
+   transform: translate(-50%, -50%);
 }
 
-.select{
+.select-menu{
+   display: flex;
+   flex-direction: row;
+   align-items: center;
+   justify-content: space-between;
+   padding-right: 5%;
+}
+
+#select{
    background-color: white;
-   margin: 4% ;
+   margin: 0%;
    width: 100%;
    align-items: center;
    justify-items: center;
-   padding: 2%;
+   padding: 0%;
+   position: relative;
 }
 
-.select h2{
+.submit{
+   align-self: end;
+   margin-top: 4vh;
+   background-color: rgb(237, 238, 252);
+   border-radius: 6px;
+}
+
+#select h2{
    margin: 0px;
+   padding: 2%;
 }
 
-input{
-   margin: 4% ;
+#select h4{
+   padding: 4% 2%;
+   margin: 0%;
+   font-size: larger;
+}
+
+#select h4:hover{
+   background-color: rgb(224, 224, 224);
+}
+
+#drop-down{
+   position: absolute;
+   background-color: white;
+   width: 100%;
+   border: 2px solid black;
+   box-sizing: border-box;
+   display: none;
+}
+
+
+#task textarea{
    width: 100%;
    align-items: center;
    justify-items: center;
    padding: 2%;
-   height: 50%;
+   height: 20vh;
    text-align: left;
-   vertical-align: text-top;
+   resize: none;
+   box-sizing: border-box;
+}
+
+#name textarea{
+   width: 100%;
+   resize: none;
+   box-sizing: border-box;
+}
+
+.information{
+   width: 100%;
+}
+
+.show{
+   display: block !important;
+}
+
+#pop-overlay{
+   display: none;
 }
