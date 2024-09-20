@@ -111,6 +111,20 @@ function Instance(Instance, Properties, Parent) {
          this._parent = newParent;
       }
    });
+
+   Object.defineProperty(element, "RemoveProperties", { 
+      value: function(...properties) {
+         properties.forEach(prop => {
+            this.style.removeProperty(prop);
+         });
+      }
+   });
+
+   Object.defineProperty(element, "Destroy", {
+      value: function() {
+         this.remove();
+      }
+   });
    
    if (Parent) {
       element.Parent = Parent

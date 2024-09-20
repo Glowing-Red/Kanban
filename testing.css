@@ -52,8 +52,9 @@ body {
 }
 
 .item {
-      
    height: 200px;
    width: 100%;
+
+   color: wheat;
    background-color: blue;
 }
