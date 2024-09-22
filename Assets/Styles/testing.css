@@ -45,7 +45,9 @@ body {
 
 .column {
    position: relative;
-   
+
+   display: flex;
+   flex-direction: column;
    flex: 1;
 
    background-color: red;

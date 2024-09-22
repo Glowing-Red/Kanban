@@ -60,6 +60,16 @@ function GetLength(table) {
    return Object.entries(table).length;
 }
 
+function ForTable(table, callback) {
+   const keys = Object.keys(table);
+
+   for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+
+      callback(key, i, table[key]);
+   }
+}
+
 function PropertyConvert(property) {
    const Properties = {
       "Html": "innerHTML",
@@ -77,7 +87,8 @@ function PropertyConvert(property) {
 }
 
 function Instance(Instance, Properties, Parent) {
-   const element = document.createElement(Instance);
+   const isElement = Instance instanceof HTMLElement
+   const element = isElement ? Instance : document.createElement(Instance);
    
    for (const [key, value] of Object.entries(Properties)) {
       if (IsTable(value)) {
@@ -95,6 +106,10 @@ function Instance(Instance, Properties, Parent) {
       }
    }
    
+   if (isElement) {
+      return;
+   }
+   
    Object.defineProperty(element, "Parent", {
       get() {
          return this._parent;
@@ -109,6 +124,37 @@ function Instance(Instance, Properties, Parent) {
          }
          
          this._parent = newParent;
+      }
+   });
+
+   Object.defineProperty(element, "Id", {
+      get() {
+         return this.id;
+      },
+      set(newId) {
+         this.id = newId;
+      }
+   });
+
+   Object.defineProperty(element, "Style", {
+      set(table) {
+         if (!IsTable(table)) {
+            return
+         }
+         
+         for (const [key, value] of Object.entries(table)) {
+            element.style[key] = value;
+         }
+      }
+   });
+   
+   Object.defineProperty(element, "SetParent", { 
+      value: function(targetElement, adjacentPosition) {
+         if (adjacentPosition) {
+            targetElement.insertAdjacentElement(adjacentPosition, element)
+         } else {
+            element.Parent = targetElement;
+         }
       }
    });
 
