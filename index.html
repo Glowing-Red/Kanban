@@ -2,58 +2,45 @@
 <html lang="en">
    <head>
       <link rel="stylesheet" href="Assets/Styles/Index.css">
-      <title>Instance</title>
+      <title>Task Manager</title>
    </head>
-
    
    <body>
-
       <header>Task Manager</header>
 
       <div class="div-button">
          <button onclick="PopUp()"class="add">ADD</button>
       </div>
 
-      <div class="div-container">
-
-         <div class="area to-do-area">
-            <div class="text"><h2>To do</h2></div>
-         </div>
-         <div class="area doing-area">
-            <div class="text"><h2>Doing</h2></div>
-         </div>
-         <div class="area done-area">
-            <div class="text"><h2>Done</h2></div>
-         </div>
-      </div>
+      <div class="div-container"></div>
 
       <div id="pop-overlay">
          <div class="pop">
             <div id="select">
-                <div onclick="DropDown()" class="select-menu">
+               <div onclick="DropDown()" class="select-menu">
                   <h2 id="select-text">Selected: None</h2>
                   <svg id="svg"xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-up-short" viewBox="0 0 16 16">
                      <path id="path" fill-rule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5"/>
                   </svg>
-                </div>
-               <div id="drop-down">
-                  <h4 onclick="Selected(this)">To do</h4>
-                  <h4 onclick="Selected(this)">Doing</h4>
-                  <h4 onclick="Selected(this)">Done</h4>
                </div>
+               <div id="drop-down"></div>
             </div>
+
             <div id="name" class="information">
                <h3>Name</h3>
                <textarea></textarea>
             </div>
+
             <div id="task" class="information">
                <h3>Task</h3>
                <textarea></textarea>
             </div>
-            <button class="submit">Submit</button>
+
+            <button class="submit" id="submit">Submit</button>
          </div>
       </div>
-
+      
+      <script src="Assets/Scripts/Library.js"></script>
       <script src="Assets/Scripts/Script.js"></script>
    </body>
 </html>

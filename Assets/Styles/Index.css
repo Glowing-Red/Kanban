@@ -1,3 +1,7 @@
+:root {
+   --main-colour: rgb(152, 146, 255)
+}
+
 body{
    margin: 0; 
    padding: 0;
@@ -9,7 +13,7 @@ body{
 }
 
 header{
-   background-color: rgb(152, 146, 255);
+   background-color: var(--main-colour);
    height: 7vh;
    width: 100%;
    display: flex;
@@ -34,7 +38,7 @@ header{
 }
 
 .text{
-   background-color: rgb(245, 245, 245);
+   background-color: var(--main-colour);
    text-align: center;
 }
 
