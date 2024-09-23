@@ -7,6 +7,16 @@ const tasks = {}
 
 const categories = ["To do", "Doing", "Done"];
 
+function GetKey(table, index) {
+   for (const [key, value] of Object.entries(table)) {
+      if (value === index) {
+         return key;
+      }
+   }
+
+   return;
+}
+
 function PopUp() {
    const popOverlay = document.getElementById("pop-overlay");
    
@@ -34,30 +44,6 @@ function DropDown() {
       svg.classList.add("bi-arrow-up-short");
       path.setAttribute("d", "M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5");
    }
-}
-
-function SetupCategory(name) {
-   const element = Instance("div", {
-      "Class": ["area", name.replace(/\s+/g, "-")]
-   });
-
-   const textDiv = Instance("div", {
-      "Class": "text",
-      "Style": {
-         "order": -99
-      }
-   }, element);
-
-   Instance("h2", {
-      "Text": name
-   }, textDiv);
-
-   data[name] = {
-      "Element": element,
-      "Items": {}
-   }
-
-   element.Parent = container
 }
 
 function SetupModal() {
@@ -98,6 +84,32 @@ function SetupModal() {
    };
 }
 
+function CreateCategory(name) {
+   const element = Instance("div", {
+      "Class": ["area", name.replace(/\s+/g, "-")]
+   });
+
+   const headDiv = Instance("div", {
+      "Id": "Head",
+      "Class": "text",
+      "Style": {
+         "order": -99
+      }
+   }, element);
+
+   Instance("h2", {
+      "Text": name
+   }, headDiv);
+
+   data[name] = {
+      "Element": element,
+      "Head": headDiv,
+      "Items": {}
+   }
+
+   element.Parent = container
+}
+
 function CreateTask(targetCategory, name, task) {
    const taskKey = `task_${taskCounter++}`;
    const layoutOrder = GetLength(data[targetCategory].Items);
@@ -130,23 +142,13 @@ function CreateTask(targetCategory, name, task) {
    MakeDraggable(taskElement);
 }
 
-function GetKey(table, index) {
-   for (const [key, value] of Object.entries(table)) {
-      if (value === index) {
-         return key;
-      }
-   }
-
-   return;
-}
-
 for(let i = 0; i < categories.length; i++) {
-   SetupCategory(categories[i]);
+   CreateCategory(categories[i]);
 }
 
 SetupModal();
 
-for(let i = 1; i <= 2; i++) {
+for(let i = 1; i <= 9; i++) {
    CreateTask(categories[0], FormatString("Eve-%s", i), "Drawing")
 }
 
@@ -156,49 +158,50 @@ const visualizer = {
 };
 
 function MakeDraggable(element) {
-   let pos = { X: 0, Y: 0, OffsetX: 0, OffsetY: 0 };
+   let pos = { X: 0, Y: 0, OffsetX: 0, OffsetY: 0 }
+   let mousePos = { X: 0, Y: 0 }
 
    function InitPos(event) {
-      const rect = element.getBoundingClientRect();  // Get the element's current position relative to the viewport
-  
-      // Capture the initial mouse position and element's top/left positions
+      const rect = element.getBoundingClientRect();
+      
       pos.X = event.clientX;
       pos.Y = event.clientY;
       pos.elementX = rect.left;
       pos.elementY = rect.top;
+
+      mousePos.X = event.pageX;
+      mousePos.Y = event.pageY;
    }
 
    function UpdatePos(event) {
-      pos.OffsetX = pos.X - event.clientX;
-      pos.OffsetY = pos.X - event.clientY;
+      mousePos.X = event.pageX;
+      mousePos.Y = event.pageY;
+   }
 
-      pos.X = event.clientX;
-      pos.X = event.clientY;
+   function SetElementPosition(x, y) {
+      const offsetX = pos.X - pos.elementX;
+      const offsetY = pos.Y - pos.elementY;
+
+      element.Style = {
+         "top": `${y - offsetY}px`,
+         "left": `${x - offsetX}px`
+      }
    }
 
    function LockSize() {
       const rect = element.getBoundingClientRect();
       
-      // Lock the element's size by setting width and height explicitly
       element.style.width = `${rect.width}px`;
       element.style.height = `${rect.height}px`;
+      
+      element.style.boxSizing = 'border-box';
    }
 
-   function ResetProperties(element) {
-      element.RemoveProperties("position", "top", "left", "z-index", "outline", "width", "height");
-   }
-
-   element.onmousedown = Pick;
-
-   function Pick(event) {
-      event.preventDefault();
-
-      InitPos(event);
-
+   function CreateVisualizer() {
       if (visualizer.Element != null) {
          visualizer.Element.Destroy();
       }
-      
+
       visualizer.Element = Instance("div", {
          "Class": ["visualization", "item"],
          "Style": {
@@ -209,14 +212,29 @@ function MakeDraggable(element) {
       });
       
       visualizer.Element.SetParent(element, "afterend");
+   }
+
+   function ResetProperties() {
+      element.RemoveProperties("position", "top", "left", "z-index", "outline", "width", "height", "box-sizing");
+   }
+
+   element.onmousedown = Pick;
+
+   function Pick(event) {
+      event.preventDefault();
+
+      LockSize();
+      InitPos(event);
+      CreateVisualizer();
+
       Drag(event);
       
       element.Style = {
          "position": "absolute",
-         "zIndex": "999999999",
+         "zIndex": "1000",
          "outline": "3px solid black"
       }
-
+      
       document.onmouseup = Drop;
       document.onmousemove = Drag;
    }
@@ -224,13 +242,8 @@ function MakeDraggable(element) {
    function Drag(event) {
       event.preventDefault();
       
-      const newX = pos.elementX + (event.clientX - pos.X);
-      const newY = pos.elementY + (event.clientY - pos.Y);
-      
-      element.Style = {
-         "top": newY + "px",
-         "left": newX + "px"
-      }
+      UpdatePos(event);
+      SetElementPosition(mousePos.X, mousePos.Y);
       
       Visualize(event);
    }
@@ -249,72 +262,74 @@ function MakeDraggable(element) {
          const column = value.Element;
          const columnRect = column.getBoundingClientRect();
 
-         if (cursorX >= columnRect.left && cursorX <= columnRect.right && cursorY >= columnRect.top && cursorY <= columnRect.bottom) {
-            insideColumn = true;
-            
-            const layoutOrder = GetLength(value.Items);
-            
-            visualizer.Element.Parent = column;
-            visualizer.Category = key;
-            
-            if (visualizer.Category == tasks[element.Id].Category) {
-               let closestKey = null;
-               let direction = 0;
-               let closestDifference = Infinity;
-
-               for(let i = -1 + tasks[element.Id].LayoutOrder; i >= 0; i--) {
-                  const key = GetKey(value.Items, i);
-                  const itemElement = tasks[key].Element;
-                  
-                  const elementRect = itemElement.getBoundingClientRect();
-                  const elementCenterY = elementRect.top + elementRect.height / 2;
-                  
-                  if (cursorY <= elementCenterY) {
-                     const difference = Math.abs(elementCenterY - cursorY);
-
-                     if (difference < closestDifference) {
-                        closestDifference = difference;
-                        closestKey = key;
-                        direction = -1;
-                     }
-                  }
-               }
-
-               for(let i = 1 + tasks[element.Id].LayoutOrder; i < GetLength(value.Items); i++) {
-                  const key = GetKey(value.Items, i);
-                  const itemElement = tasks[key].Element;
-
-                  const elementRect = itemElement.getBoundingClientRect();
-                  const elementCenterY = elementRect.top + elementRect.height / 2;
-
-                  if (cursorY >= elementCenterY) {
-                     const difference = Math.abs(elementCenterY - cursorY);
-
-                     if (difference < closestDifference) {
-                        closestDifference = difference;
-                        closestKey = key;
-                        direction = 0;
-                     }
-                  }
-               }
-
-               if (closestKey != null) {
-                  visualizer.Element.style.order = tasks[closestKey].LayoutOrder + direction;
-               } else {
-                  visualizer.Element.style.order = tasks[element.Id].LayoutOrder;
-               }
-
-               return;
-            }
-            
-            visualizer.Element.style.order = layoutOrder;
+         if (!(cursorX >= columnRect.left && cursorX <= columnRect.right && cursorY >= columnRect.top && cursorY <= columnRect.bottom)) {
+            continue
          }
+         
+         insideColumn = true;
+            
+         const layoutOrder = GetLength(value.Items);
+         
+         visualizer.Element.Parent = column;
+         visualizer.Category = key;
+         
+         if (visualizer.Category == tasks[element.Id].Category) {
+            let closestKey = null;
+            let direction = 0;
+            let closestDifference = Infinity;
+
+            for(let i = -1 + tasks[element.Id].LayoutOrder; i >= 0; i--) {
+               const key = GetKey(value.Items, i);
+               const itemElement = tasks[key].Element;
+               
+               const elementRect = itemElement.getBoundingClientRect();
+               const elementCenterY = elementRect.top + elementRect.height / 2;
+               
+               if (cursorY <= elementCenterY) {
+                  const difference = Math.abs(elementCenterY - cursorY);
+
+                  if (difference < closestDifference) {
+                     closestDifference = difference;
+                     closestKey = key;
+                     direction = -1;
+                  }
+               }
+            }
+
+            for(let i = 1 + tasks[element.Id].LayoutOrder; i < GetLength(value.Items); i++) {
+               const key = GetKey(value.Items, i);
+               const itemElement = tasks[key].Element;
+
+               const elementRect = itemElement.getBoundingClientRect();
+               const elementCenterY = elementRect.top + elementRect.height / 2;
+
+               if (cursorY >= elementCenterY) {
+                  const difference = Math.abs(elementCenterY - cursorY);
+
+                  if (difference < closestDifference) {
+                     closestDifference = difference;
+                     closestKey = key;
+                     direction = 0;
+                  }
+               }
+            }
+
+            if (closestKey != null) {
+               visualizer.Element.style.order = tasks[closestKey].LayoutOrder + direction;
+            } else {
+               visualizer.Element.style.order = tasks[element.Id].LayoutOrder;
+            }
+
+            return;
+         }
+         
+         visualizer.Element.style.order = layoutOrder;
       }
       
       if (!insideColumn) {
          const key = tasks[element.Id].Category;
          const layoutOrder = tasks[element.Id].LayoutOrder;
-
+         
          visualizer.Element.Parent = data[key].Element;
          visualizer.Category = key;
          visualizer.Element.style.order = layoutOrder;
