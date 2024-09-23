@@ -105,11 +105,14 @@ function CreateTask(targetCategory, name, task) {
    const taskElement = Instance("div", {
       "Id": taskKey,
       "Class": "task",
-      "Text": FormatString("%s (Name): %s (Task)", name, task),
       "Style": {
          "order": layoutOrder
       }
    });
+
+   Instance("p", {
+      "Text": FormatString("%s (Name): %s (Task)", name, task)
+   }, taskElement);
    
    tasks[taskKey] = {
       "Element": taskElement,
