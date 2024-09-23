@@ -7,8 +7,6 @@ const tasks = {}
 
 const categories = ["To do", "Doing", "Done"];
 
-let showing = false;
-
 function PopUp() {
    const popOverlay = document.getElementById("pop-overlay");
    
@@ -23,7 +21,7 @@ function DropDown() {
    svg = document.getElementById("svg")
    path = document.getElementById("path")
 
-   if(!showing){
+   if(!Array.from(document.getElementById("drop-down").classList).includes("show")){
       document.getElementById("drop-down").classList.add("show")
       showing = true;
       svg.classList.remove("bi-arrow-up-short");
@@ -88,9 +86,9 @@ function SetupModal() {
       };
    }
 
-   submit.onmousedown = function() {
+   modalSubmit.onmousedown = function() {
       if (selected != null && IsValidString(modalName.value) && IsValidString(modalTask.value)) {
-         CreateTask(selected, modalName.value.trimEnd(), modalTask.value.trimEnd())
+         CreateTask(selected, modalName.value, modalTask.value)
          
          PopUp();
 
@@ -136,7 +134,7 @@ function GetKey(table, index) {
 }
 
 for(let i = 0; i < categories.length; i++) {
-   SetupCategory(categories[i])
+   SetupCategory(categories[i]);
 }
 
 SetupModal();
