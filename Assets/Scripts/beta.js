@@ -188,29 +188,31 @@ function MakeDraggable(element) {
       }
    }
 
-   function LockSize() {
+   function FixSize(targetElement) {
       const rect = element.getBoundingClientRect();
       
-      element.style.width = `${rect.width}px`;
-      element.style.height = `${rect.height}px`;
-      
-      element.style.boxSizing = 'border-box';
+      targetElement.Style = {
+         "height": `${rect.height}px`,
+         "width": `${rect.width}px`,
+         "boxSizing": "border-box"
+      }
    }
 
    function CreateVisualizer() {
       if (visualizer.Element != null) {
          visualizer.Element.Destroy();
       }
-
+      
       visualizer.Element = Instance("div", {
-         "Class": ["visualization", "item"],
+         "Class": ["task", "visualization"],
          "Style": {
             "backgroundColor": "rgba(0,0,0,0)",
             "border": "5px solid black",
             "order": tasks[element.Id].LayoutOrder
          }
       });
-      
+
+      FixSize(visualizer.Element);
       visualizer.Element.SetParent(element, "afterend");
    }
 
@@ -223,7 +225,7 @@ function MakeDraggable(element) {
    function Pick(event) {
       event.preventDefault();
 
-      LockSize();
+      FixSize(element);
       InitPos(event);
       CreateVisualizer();
 
@@ -267,7 +269,7 @@ function MakeDraggable(element) {
          }
          
          insideColumn = true;
-            
+         
          const layoutOrder = GetLength(value.Items);
          
          visualizer.Element.Parent = column;
