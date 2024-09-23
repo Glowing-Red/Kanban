@@ -111,7 +111,11 @@ function CreateTask(targetCategory, name, task) {
    });
 
    Instance("p", {
-      "Text": FormatString("%s (Name): %s (Task)", name, task)
+      "Html": FormatText(FormatString("**Name:** %s", name))
+   }, taskElement);
+
+   Instance("p", {
+      "Html": FormatText(FormatString("**Task:** %s", task))
    }, taskElement);
    
    tasks[taskKey] = {
@@ -142,7 +146,7 @@ for(let i = 0; i < categories.length; i++) {
 
 SetupModal();
 
-for(let i = 1; i <= 4; i++) {
+for(let i = 1; i <= 2; i++) {
    CreateTask(categories[0], FormatString("Eve-%s", i), "Drawing")
 }
 
@@ -152,18 +156,44 @@ const visualizer = {
 };
 
 function MakeDraggable(element) {
-   let pos1 = 0;
-   let pos2 = 0;
-   let pos3 = 0
-   let pos4 = 0;
+   let pos = { X: 0, Y: 0, OffsetX: 0, OffsetY: 0 };
+
+   function InitPos(event) {
+      const rect = element.getBoundingClientRect();  // Get the element's current position relative to the viewport
+  
+      // Capture the initial mouse position and element's top/left positions
+      pos.X = event.clientX;
+      pos.Y = event.clientY;
+      pos.elementX = rect.left;
+      pos.elementY = rect.top;
+   }
+
+   function UpdatePos(event) {
+      pos.OffsetX = pos.X - event.clientX;
+      pos.OffsetY = pos.X - event.clientY;
+
+      pos.X = event.clientX;
+      pos.X = event.clientY;
+   }
+
+   function LockSize() {
+      const rect = element.getBoundingClientRect();
+      
+      // Lock the element's size by setting width and height explicitly
+      element.style.width = `${rect.width}px`;
+      element.style.height = `${rect.height}px`;
+   }
+
+   function ResetProperties(element) {
+      element.RemoveProperties("position", "top", "left", "z-index", "outline", "width", "height");
+   }
 
    element.onmousedown = Pick;
 
    function Pick(event) {
       event.preventDefault();
-      
-      pos3 = event.clientX;
-      pos4 = event.clientY;
+
+      InitPos(event);
 
       if (visualizer.Element != null) {
          visualizer.Element.Destroy();
@@ -194,14 +224,12 @@ function MakeDraggable(element) {
    function Drag(event) {
       event.preventDefault();
       
-      pos1 = pos3 - event.clientX;
-      pos2 = pos4 - event.clientY;
-      pos3 = event.clientX;
-      pos4 = event.clientY;
+      const newX = pos.elementX + (event.clientX - pos.X);
+      const newY = pos.elementY + (event.clientY - pos.Y);
       
       element.Style = {
-         "top": (element.offsetTop - pos2) + "px",
-         "left": (element.offsetLeft - pos1) + "px"
+         "top": newY + "px",
+         "left": newX + "px"
       }
       
       Visualize(event);
@@ -407,6 +435,6 @@ function MakeDraggable(element) {
       visualizer.Element.Destroy();
       visualizer.Element = undefined;
 
-      element.RemoveProperties("position", "top", "left", "z-index", "outline");
+      ResetProperties();
    }
 }
