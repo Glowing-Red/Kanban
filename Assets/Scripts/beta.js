@@ -1,4 +1,4 @@
-const content = document.querySelector(".content");
+const container = document.querySelector(".div-container");
 
 let taskCounter = 1;
 
@@ -7,25 +7,107 @@ const tasks = {}
 
 const categories = ["To do", "Doing", "Done"];
 
-for(let i = 0; i < categories.length; i++) {
-   data[categories[i]] = {
-      "Element": Instance("div", {
-         "Class": "column"
-      }, content),
-      
-      "Items": {}
+let showing = false;
+
+function PopUp() {
+   const popOverlay = document.getElementById("pop-overlay");
+   
+   if (Array.from(popOverlay.classList).includes("show")) {
+      document.getElementById("pop-overlay").classList.remove("show")
+   } else {
+      document.getElementById("pop-overlay").classList.add("show")
    }
 }
 
-const targetCategory = categories[0]
-function CreateTask(text) {
+function DropDown() {
+   svg = document.getElementById("svg")
+   path = document.getElementById("path")
+
+   if(!showing){
+      document.getElementById("drop-down").classList.add("show")
+      showing = true;
+      svg.classList.remove("bi-arrow-up-short");
+      svg.classList.add("bi-arrow-down-short");
+      path.setAttribute("d", "M8 4a.5.5 0 0 1 .5.5v5.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 10.293V4.5A.5.5 0 0 1 8 4")
+   }else{
+      document.getElementById("drop-down").classList.remove("show")
+      showing = false;
+      svg.classList.remove("bi-arrow-down-short");
+      svg.classList.add("bi-arrow-up-short");
+      path.setAttribute("d", "M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5");
+   }
+}
+
+function SetupCategory(name) {
+   const element = Instance("div", {
+      "Class": ["area", name.replace(/\s+/g, "-")]
+   });
+
+   const textDiv = Instance("div", {
+      "Class": "text",
+      "Style": {
+         "order": -99
+      }
+   }, element);
+
+   Instance("h2", {
+      "Text": name
+   }, textDiv);
+
+   data[name] = {
+      "Element": element,
+      "Items": {}
+   }
+
+   element.Parent = container
+}
+
+function SetupModal() {
+   const dropdown = document.querySelector("#drop-down");
+
+   const modalName = document.querySelector("#name").querySelector("textarea");
+   const modalTask = document.querySelector("#task").querySelector("textarea");
+   const modalSubmit = document.querySelector("#submit");
+   
+   let selected = undefined;
+
+   function Selected(option){
+      selected = option;
+      document.getElementById("select-text").innerText = "Selected: " + selected;
+      
+      DropDown();
+   }
+
+   for(let i = 0; i < categories.length; i++) {
+      const h4Element = Instance("h4", {
+         "Text": categories[i]
+      }, dropdown);
+
+      h4Element.onmousedown = function() {
+         Selected(categories[i]);
+      };
+   }
+
+   submit.onmousedown = function() {
+      if (selected != null && IsValidString(modalName.value) && IsValidString(modalTask.value)) {
+         CreateTask(selected, modalName.value.trimEnd(), modalTask.value.trimEnd())
+         
+         PopUp();
+
+         document.getElementById("select-text").innerText = "Selected: None";
+         [selected, modalName.value, modalTask.value] = [undefined, "", ""];
+      }
+   };
+}
+
+function CreateTask(targetCategory, name, task) {
    const taskKey = `task_${taskCounter++}`;
    const layoutOrder = GetLength(data[targetCategory].Items);
    
    const taskElement = Instance("div", {
       "Id": taskKey,
-      "Class": ["item"],
-      "Text": text,
+      "Class": "task",
+      "Text": FormatString("%s (Name): %s (Task)", name, task),
       "Style": {
          "order": layoutOrder
       }
@@ -53,8 +135,14 @@ function GetKey(table, index) {
    return;
 }
 
+for(let i = 0; i < categories.length; i++) {
+   SetupCategory(categories[i])
+}
+
+SetupModal();
+
 for(let i = 1; i <= 4; i++) {
-   CreateTask(i)
+   CreateTask(categories[0], FormatString("Eve-%s", i), "Drawing")
 }
 
 const visualizer = {
