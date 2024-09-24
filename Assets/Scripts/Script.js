@@ -111,8 +111,12 @@ function CreateTask(targetCategory, name, task) {
    });
 
    Instance("p", {
-    "Text": FormatString("%s: %s", name, task)
+    "Text": FormatString("Name: %s", name)
    }, taskElement)
+
+   Instance("p", {
+      "Text": FormatString("Task: %s", task)
+     }, taskElement)
    
    tasks[taskKey] = {
       "Element": taskElement,
@@ -141,10 +145,6 @@ for(let i = 0; i < categories.length; i++) {
 }
 
 SetupModal();
-
-for(let i = 1; i <= 4; i++) {
-   CreateTask(categories[0], FormatString("Eve-%s", i), "Drawing")
-}
 
 const visualizer = {
    "Category": null,
