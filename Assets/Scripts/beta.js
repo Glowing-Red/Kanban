@@ -157,6 +157,12 @@ const visualizer = {
    "Element": null
 };
 
+function CheckBounds(targetElement, position) {
+   const targetRect = targetElement.getBoundingClientRect();
+   
+   return (position.X >= targetRect.left && position.X <= targetRect.right && position.Y >= targetRect.top && position.Y <= targetRect.bottom);
+}
+
 function MakeDraggable(element) {
    let pos = { X: 0, Y: 0, OffsetX: 0, OffsetY: 0 }
    let mousePos = { X: 0, Y: 0 }
@@ -250,6 +256,100 @@ function MakeDraggable(element) {
       Visualize(event);
    }
 
+   function AdjustOrder() {
+      const previousItems = data[tasks[element.Id].Category].Items;
+      const previousItemsCount = GetLength(previousItems);
+      const elementLayoutOrder = tasks[element.Id].LayoutOrder;
+      
+      for (let i = elementLayoutOrder + 1; i < previousItemsCount; i++) {
+         const taskKey = GetKey(previousItems, i);
+         
+         UpdateOrder(taskKey, -1 + tasks[taskKey].LayoutOrder);
+      }
+   }
+
+   function UpdateCategory(targetKey, category) {
+      delete data[tasks[targetKey].Category].Items[targetKey];
+      tasks[targetKey].Category = category;
+
+      tasks[targetKey].Element.Parent = data[category].Element;
+   }
+
+   function UpdateOrder(targetKey, order) {
+      tasks[targetKey].LayoutOrder = order;
+      tasks[targetKey].Element.style.order = tasks[targetKey].LayoutOrder;
+      data[tasks[targetKey].Category].Items[targetKey] = tasks[targetKey].LayoutOrder;
+   }
+
+   function GetClosestKey(event, items, sameColumn) {
+      const cursorY = event.clientY;
+      const itemsCount = GetLength(items);
+
+      let closestKey = null;
+      let direction = 0;
+      let closestDifference = Infinity;
+      
+      if (sameColumn) {
+         for(let i = -1 + tasks[element.Id].LayoutOrder; i >= 0; i--) {
+            const key = GetKey(items, i);
+            console.log(i, key, items)
+            const itemElement = tasks[key].Element;
+            
+            const elementRect = itemElement.getBoundingClientRect();
+            const elementCenterY = elementRect.top + elementRect.height / 2;
+            
+            if (cursorY <= elementCenterY) {
+               const difference = Math.abs(elementCenterY - cursorY);
+
+               if (difference < closestDifference) {
+                  closestDifference = difference;
+                  closestKey = key;
+                  direction = -1;
+               }
+            }
+         }
+
+         for(let i = 1 + tasks[element.Id].LayoutOrder; i < GetLength(items); i++) {
+            const key = GetKey(items, i);
+            const itemElement = tasks[key].Element;
+
+            const elementRect = itemElement.getBoundingClientRect();
+            const elementCenterY = elementRect.top + elementRect.height / 2;
+
+            if (cursorY >= elementCenterY) {
+               const difference = Math.abs(elementCenterY - cursorY);
+
+               if (difference < closestDifference) {
+                  closestDifference = difference;
+                  closestKey = key;
+                  direction = 0;
+               }
+            }
+         }
+      } else {
+         for(let i = -1 + itemsCount; i >= 0; i--) {
+            const key = GetKey(items, i);
+            
+            const itemElement = tasks[key].Element;
+            
+            const elementRect = itemElement.getBoundingClientRect();
+            const elementCenterY = elementRect.top + elementRect.height / 2;
+            
+            if (cursorY <= elementCenterY) {
+               const difference = Math.abs(elementCenterY - cursorY);
+
+               if (difference < closestDifference) {
+                  closestDifference = difference;
+                  closestKey = key;
+                  direction = -1;
+               }
+            }
+         }
+      }
+      
+      return [closestKey, direction];
+   }
+
    function Visualize(event) {
       if (!visualizer.Element) {
          return;
@@ -262,70 +362,37 @@ function MakeDraggable(element) {
 
       for (const [key, value] of Object.entries(data)) {
          const column = value.Element;
-         const columnRect = column.getBoundingClientRect();
-
-         if (!(cursorX >= columnRect.left && cursorX <= columnRect.right && cursorY >= columnRect.top && cursorY <= columnRect.bottom)) {
+         
+         if (!CheckBounds(column, { X: cursorX, Y: cursorY })) {
             continue
          }
          
          insideColumn = true;
          
-         const layoutOrder = GetLength(value.Items);
-         
          visualizer.Element.Parent = column;
          visualizer.Category = key;
          
-         if (visualizer.Category == tasks[element.Id].Category) {
-            let closestKey = null;
-            let direction = 0;
-            let closestDifference = Infinity;
+         const insideHead = CheckBounds(value.Head, { X: cursorX, Y: cursorY });
+         const sameColumn = (visualizer.Category == tasks[element.Id].Category);
+         const itemsCount = GetLength(value.Items);
+         
+         let [closestKey, direction] = GetClosestKey(event, value.Items, sameColumn);
+         
+         if(insideHead) {
+            visualizer.Element.style.order = itemsCount;
 
-            for(let i = -1 + tasks[element.Id].LayoutOrder; i >= 0; i--) {
-               const key = GetKey(value.Items, i);
-               const itemElement = tasks[key].Element;
-               
-               const elementRect = itemElement.getBoundingClientRect();
-               const elementCenterY = elementRect.top + elementRect.height / 2;
-               
-               if (cursorY <= elementCenterY) {
-                  const difference = Math.abs(elementCenterY - cursorY);
-
-                  if (difference < closestDifference) {
-                     closestDifference = difference;
-                     closestKey = key;
-                     direction = -1;
-                  }
-               }
-            }
-
-            for(let i = 1 + tasks[element.Id].LayoutOrder; i < GetLength(value.Items); i++) {
-               const key = GetKey(value.Items, i);
-               const itemElement = tasks[key].Element;
-
-               const elementRect = itemElement.getBoundingClientRect();
-               const elementCenterY = elementRect.top + elementRect.height / 2;
-
-               if (cursorY >= elementCenterY) {
-                  const difference = Math.abs(elementCenterY - cursorY);
-
-                  if (difference < closestDifference) {
-                     closestDifference = difference;
-                     closestKey = key;
-                     direction = 0;
-                  }
-               }
-            }
-
-            if (closestKey != null) {
-               visualizer.Element.style.order = tasks[closestKey].LayoutOrder + direction;
-            } else {
-               visualizer.Element.style.order = tasks[element.Id].LayoutOrder;
-            }
-
-            return;
+            break;
          }
          
-         visualizer.Element.style.order = layoutOrder;
+         if (closestKey != null) {
+            visualizer.Element.style.order = tasks[closestKey].LayoutOrder + direction;
+         } else {
+            if (sameColumn) {
+               visualizer.Element.style.order = tasks[element.Id].LayoutOrder;
+            } else {
+               visualizer.Element.style.order = itemsCount;
+            }
+         }
       }
       
       if (!insideColumn) {
@@ -345,112 +412,91 @@ function MakeDraggable(element) {
       const cursorX = event.clientX;
       const cursorY = event.clientY;
       
+      let insideColumn = false;
+
       for (const [key, value] of Object.entries(data)) {
          const column = value.Element;
-         const columnRect = column.getBoundingClientRect();
          
-         if (cursorX >= columnRect.left && cursorX <= columnRect.right && cursorY >= columnRect.top && cursorY <= columnRect.bottom) {
-            if (key === tasks[element.id].Category) {
-               let closestKey = null;
-               let closestDifference = Infinity;
-
-               for(let i = -1 + tasks[element.Id].LayoutOrder; i >= 0; i--) {
-                  const key = GetKey(value.Items, i);
-                  const itemElement = tasks[key].Element;
-                  
-                  const elementRect = itemElement.getBoundingClientRect();
-                  const elementCenterY = elementRect.top + elementRect.height / 2;
-
-                  if (cursorY <= elementCenterY) {
-                     const difference = Math.abs(elementCenterY - cursorY);
-
-                     if (difference < closestDifference) {
-                        closestDifference = difference;
-                        closestKey = key;
-                     }
-                  }
-               }
-               
-               for(let i = 1 + tasks[element.Id].LayoutOrder; i < GetLength(value.Items); i++) {
-                  const key = GetKey(value.Items, i);
-                  const itemElement = tasks[key].Element;
-
-                  const elementRect = itemElement.getBoundingClientRect();
-                  const elementCenterY = elementRect.top + elementRect.height / 2;
-
-                  if (cursorY >= elementCenterY) {
-                     const difference = Math.abs(elementCenterY - cursorY);
-
-                     if (difference < closestDifference) {
-                        closestDifference = difference;
-                        closestKey = key;
-                     }
-                  }
-               }
-               
-               if (tasks[closestKey] != null) {
-                  const keyLayoutOrder = tasks[closestKey].LayoutOrder;
-                  const elementLayoutOrder = tasks[element.Id].LayoutOrder;
-                  
-                  console.log(elementLayoutOrder, keyLayoutOrder)
-                  if (keyLayoutOrder < elementLayoutOrder) {
-                     console.log("Down");
-
-                     const keyOrders = {}
-
-                     for (let i = keyLayoutOrder; i < elementLayoutOrder; i++) {
-                        const key = GetKey(value.Items, i);
-                        
-                        keyOrders[key] = i;
-                     }
-                     
-                     ForTable(keyOrders, function(key) {
-                        tasks[key].LayoutOrder++;
-                        tasks[key].Element.style.order = tasks[key].LayoutOrder;
-                        value.Items[key] = tasks[key].LayoutOrder;
-                     });
-                  } else {
-                     console.log("Up");
-                     
-                     for (let i = elementLayoutOrder; i <= keyLayoutOrder; i++) {
-                        const key = GetKey(value.Items, i);
-                        tasks[key].LayoutOrder--;
-                        tasks[key].Element.style.order = tasks[key].LayoutOrder;
-                        value.Items[key] = tasks[key].LayoutOrder;
-                     }
-                  }
-                  
-                  tasks[element.Id].LayoutOrder = keyLayoutOrder;
-                  tasks[element.Id].Element.style.order = keyLayoutOrder;
-                  value.Items[element.Id] = keyLayoutOrder;
-               } else {
-                  visualizer.Element.style.order = tasks[element.Id].LayoutOrder;
-               }
+         if (!CheckBounds(column, { X: cursorX, Y: cursorY })) {
+            continue
+         }
+         
+         insideColumn = true;
+         
+         const itemsCount = GetLength(value.Items);
+         const insideHead = CheckBounds(value.Head, { X: cursorX, Y: cursorY });
+         const sameColumn = (key == tasks[element.Id].Category);
+         
+         let [closestKey, direction] = GetClosestKey(event, value.Items, sameColumn);
+         
+         if(insideHead || itemsCount == 0 || !closestKey) {
+            AdjustOrder();
+            
+            if (sameColumn) {
+               UpdateOrder(element.Id, -1 + itemsCount);
             } else {
-               const elementCategory = tasks[element.Id].Category;
-               const layoutOrder = GetLength(value.Items);
-
-               delete data[elementCategory].Items[element.Id];
-               
-               ForTable(data[elementCategory].Items, function(key, index) {
-                  tasks[key].Element.style.order = index;
-                  tasks[key].LayoutOrder = index;
-                  data[elementCategory].Items[key] = index;
-               });
-
-               tasks[element.Id].Category = key;
-               tasks[element.Id].LayoutOrder = layoutOrder;
-               
-               element.style.order = layoutOrder;
-               value.Items[element.Id] = layoutOrder;
-
-               column.appendChild(element);
+               UpdateCategory(element.Id, key);
+               UpdateOrder(element.Id, itemsCount);
             }
+            
+            break;
+         }
+         
+         
+         const keyLayoutOrder = tasks[closestKey].LayoutOrder;
+
+         if (sameColumn) {
+            const elementLayoutOrder = tasks[element.Id].LayoutOrder;
+            
+            if (keyLayoutOrder < elementLayoutOrder) {
+               console.log("Down");
+
+               const keyOrders = {}
+
+               for (let i = keyLayoutOrder; i < elementLayoutOrder; i++) {
+                  const taskKey = GetKey(value.Items, i);
+                     
+                  keyOrders[taskKey] = i;
+               }
+                  
+               ForTable(keyOrders, function(taskKey) {
+                  UpdateOrder(taskKey, 1 + tasks[taskKey].LayoutOrder);
+               });
+            } else {
+               console.log("Up");
+               
+               for (let i = elementLayoutOrder; i <= keyLayoutOrder; i++) {
+                  const taskKey = GetKey(value.Items, i);
+
+                  UpdateOrder(taskKey, -1 + tasks[taskKey].LayoutOrder);
+               }
+            }
+            
+            UpdateOrder(element.Id, keyLayoutOrder);
+         } else {
+            const keyOrders = {}
+            
+            AdjustOrder();
+            
+            for (let i = keyLayoutOrder; i < itemsCount; i++) {
+               const taskKey = GetKey(value.Items, i);
+                     
+               keyOrders[taskKey] = i;
+            }
+            
+            ForTable(keyOrders, function(taskKey) {
+               UpdateOrder(taskKey, 1 + tasks[taskKey].LayoutOrder);
+            });
+
+            UpdateCategory(element.Id, key);
+            UpdateOrder(element.Id, keyLayoutOrder);
          }
       }
-      
-      visualizer.Element.Destroy();
-      visualizer.Element = undefined;
+
+      if(visualizer.Element) {
+         visualizer.Element.Destroy();
+         visualizer.Element = undefined;
+      }
 
       ResetProperties();
    }
