@@ -149,7 +149,7 @@ for(let i = 0; i < categories.length; i++) {
 SetupModal();
 
 for(let i = 1; i <= 9; i++) {
-   CreateTask(categories[0], FormatString("Eve-%s", i), "Drawing")
+   CreateTask(categories[0], FormatString("Eve-%s", i), "Kemi")
 }
 
 const visualizer = {
@@ -224,27 +224,6 @@ function MakeDraggable(element) {
 
    function ResetProperties() {
       element.RemoveProperties("position", "top", "left", "z-index", "outline", "width", "height", "box-sizing");
-   }
-
-   element.onmousedown = Pick;
-
-   function Pick(event) {
-      event.preventDefault();
-
-      FixSize(element);
-      InitPos(event);
-      CreateVisualizer();
-
-      Drag(event);
-      
-      element.Style = {
-         "position": "absolute",
-         "zIndex": "1000",
-         "outline": "3px solid black"
-      }
-      
-      document.onmouseup = Drop;
-      document.onmousemove = Drag;
    }
 
    function Drag(event) {
@@ -500,4 +479,25 @@ function MakeDraggable(element) {
 
       ResetProperties();
    }
+
+   function Pick(event) {
+      event.preventDefault();
+
+      FixSize(element);
+      InitPos(event);
+      CreateVisualizer();
+
+      Drag(event);
+      
+      element.Style = {
+         "position": "absolute",
+         "zIndex": "1000",
+         "outline": "3px solid black"
+      }
+      
+      document.onmouseup = Drop;
+      document.onmousemove = Drag;
+   }
+   
+   element.onmousedown = Pick;
 }
