@@ -62,7 +62,7 @@ function GetLength(table) {
 
 function ForTable(table, callback) {
    const keys = Object.keys(table);
-
+   
    for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
 

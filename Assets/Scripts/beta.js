@@ -31,7 +31,7 @@ function DropDown() {
    svg = document.getElementById("svg")
    path = document.getElementById("path")
 
-   if(!Array.from(document.getElementById("drop-down").classList).includes("show")){
+   if (!Array.from(document.getElementById("drop-down").classList).includes("show")) {
       document.getElementById("drop-down").classList.add("show")
       showing = true;
       svg.classList.remove("bi-arrow-up-short");
@@ -55,7 +55,7 @@ function SetupModal() {
    
    let selected = undefined;
 
-   function Selected(option){
+   function Selected(option) {
       selected = option;
       document.getElementById("select-text").innerText = "Selected: " + selected;
       
@@ -131,6 +131,8 @@ function CreateTask(targetCategory, name, task) {
    }, taskElement);
    
    tasks[taskKey] = {
+      "Name": name,
+      "Task": task,
       "Element": taskElement,
       "Category": targetCategory,
       "LayoutOrder": layoutOrder
@@ -138,19 +140,67 @@ function CreateTask(targetCategory, name, task) {
    
    data[targetCategory].Items[taskKey] = layoutOrder;
    taskElement.Parent = data[targetCategory].Element;
-
+   
    MakeDraggable(taskElement);
+}
+
+function SaveTasks() {
+   function DeepCopyTasks(object) {
+      const copiedObject = {}
+
+      ForTable(object, function(key, index, value) {
+         if (IsTable(value)) {
+            copiedObject[key] = DeepCopyTasks(value)
+         } else if (key !== "Element") {
+            copiedObject[key] = value
+         }
+      })
+      
+      return copiedObject;
+   }
+
+   localStorage.setItem('savedTasksTest', JSON.stringify(DeepCopyTasks(tasks)));
+}
+
+function LoadTasks() {
+   const testSave = JSON.parse(localStorage.getItem('savedTasksTest'));
+   const filteredTasks = {}
+   
+   ForTable(testSave, function(key, index, value) {
+      if (IsValidString(value.Category) && categories.includes(value.Category)) {
+         if (!filteredTasks[value.Category]) {
+            filteredTasks[value.Category] = {}
+         }
+
+         filteredTasks[value.Category][key] = value;
+      }
+   })
+
+   ForTable(filteredTasks, function(key, index, value) {
+      const sortedEntries = Object.entries(value).sort(([keyA, valueA], [keyB, valueB]) => {
+         return valueA.LayoutOrder - valueB.LayoutOrder;
+      });
+
+      filteredTasks[key] = Object.fromEntries(sortedEntries);
+   })
+
+   ForTable(filteredTasks, function(category, index, categoryValue) {
+      ForTable(categoryValue, function(task, index, taskValue) {
+         CreateTask(category, taskValue.Name, taskValue.Task);
+      })
+   })
 }
 
 for(let i = 0; i < categories.length; i++) {
    CreateCategory(categories[i]);
 }
 
-SetupModal();
-
-for(let i = 1; i <= 9; i++) {
+for(let i = 1; i <= 3; i++) {
    CreateTask(categories[0], FormatString("Eve-%s", i), "Kemi")
 }
+
+//LoadTasks();
+SetupModal();
 
 const visualizer = {
    "Category": null,
@@ -271,7 +321,7 @@ function MakeDraggable(element) {
       if (sameColumn) {
          for(let i = -1 + tasks[element.Id].LayoutOrder; i >= 0; i--) {
             const key = GetKey(items, i);
-            console.log(i, key, items)
+            
             const itemElement = tasks[key].Element;
             
             const elementRect = itemElement.getBoundingClientRect();
@@ -357,7 +407,7 @@ function MakeDraggable(element) {
          
          let [closestKey, direction] = GetClosestKey(event, value.Items, sameColumn);
          
-         if(insideHead) {
+         if (insideHead) {
             visualizer.Element.style.order = itemsCount;
 
             break;
@@ -408,7 +458,7 @@ function MakeDraggable(element) {
          
          let [closestKey, direction] = GetClosestKey(event, value.Items, sameColumn);
          
-         if(insideHead || itemsCount == 0 || !closestKey) {
+         if (insideHead || itemsCount == 0 || !closestKey) {
             AdjustOrder();
             
             if (sameColumn) {
@@ -472,7 +522,7 @@ function MakeDraggable(element) {
          }
       }
 
-      if(visualizer.Element) {
+      if (visualizer.Element) {
          visualizer.Element.Destroy();
          visualizer.Element = undefined;
       }
@@ -498,6 +548,49 @@ function MakeDraggable(element) {
       document.onmouseup = Drop;
       document.onmousemove = Drag;
    }
-   
-   element.onmousedown = Pick;
+
+   function DisableContextMenu(event) {
+      event.preventDefault();
+
+      MouseDown(event, true);
+   }
+
+   function MouseDown(event, rigthClick) {
+      event.preventDefault();
+      
+      if (event.button === 0) {
+         console.log("Left click");
+         Pick(event);
+      } else if (event.button === 2 && rigthClick) {
+         console.log("Right click");
+         
+         const mouseX = event.clientX;
+         const mouseY = event.clientY;
+
+         const targetElement = Instance("div", {
+            "Class": "popup",
+            "Style": {
+               "display": "block",
+               "position": "absolute",
+               "heigh": "50px",
+               "width": "100px",
+               "backgroundColor": "#fff",
+               "border": "1px solid #ccc",
+               "padding": "10px",
+               "boxShadow": "0px 4px 6px rgba(0, 0, 0, 0.1)",
+               "zIndex": "1000"
+           }
+         }, document.body);
+         
+         const targetRect = targetElement.getBoundingClientRect();
+         
+         targetElement.Style = {
+            "top": (mouseY - targetRect.height) + 'px',
+            "left": (mouseX - targetRect.width) + 'px'
+         }
+      }
+   }
+
+   element.oncontextmenu = DisableContextMenu;
+   element.onmousedown = MouseDown;
 }
