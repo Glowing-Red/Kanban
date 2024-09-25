@@ -74,7 +74,7 @@ function SetupModal() {
 
    modalSubmit.onmousedown = function() {
       if (selected != null && IsValidString(modalName.value) && IsValidString(modalTask.value)) {
-         CreateTask(selected, modalName.value, modalTask.value)
+         AddTask(selected, modalName.value, modalTask.value)
          
          PopUp();
 
@@ -82,6 +82,24 @@ function SetupModal() {
          [selected, modalName.value, modalTask.value] = [undefined, "", ""];
       }
    };
+}
+
+function SaveTasks() {
+   function DeepCopyTasks(object) {
+      const copiedObject = {}
+
+      ForTable(object, function(key, index, value) {
+         if (IsTable(value)) {
+            copiedObject[key] = DeepCopyTasks(value)
+         } else if (key !== "Element") {
+            copiedObject[key] = value
+         }
+      })
+      
+      return copiedObject;
+   }
+   
+   localStorage.setItem("savedTasksTest", JSON.stringify(DeepCopyTasks(tasks)));
 }
 
 function CreateCategory(name) {
@@ -110,8 +128,42 @@ function CreateCategory(name) {
    element.Parent = container
 }
 
-function CreateTask(targetCategory, name, task) {
-   const taskKey = `task_${taskCounter++}`;
+function GenerateTaskKey() {
+   const keys = Object.keys(tasks);
+   
+   for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+
+      if (key !== `task_${1 + i}`) {
+         return `task_${1 + i}`;
+      }
+   }
+   
+   return `task_${1 + keys.length}`;
+}
+
+function UpdateOrder(targetKey, order) {
+   tasks[targetKey].LayoutOrder = order;
+   tasks[targetKey].Element.style.order = tasks[targetKey].LayoutOrder;
+   data[tasks[targetKey].Category].Items[targetKey] = tasks[targetKey].LayoutOrder;
+}
+
+function AdjustOrder(taskKey) {
+   console.log("adjust",taskKey,tasks[taskKey]);
+   
+   const previousItems = data[tasks[taskKey].Category].Items;
+   const previousItemsCount = GetLength(previousItems);
+   const elementLayoutOrder = tasks[taskKey].LayoutOrder;
+   
+   for (let i = elementLayoutOrder + 1; i < previousItemsCount; i++) {
+      const indexKey = GetKey(previousItems, i);
+      
+      UpdateOrder(indexKey, -1 + tasks[indexKey].LayoutOrder);
+   }
+}
+
+function AddTask(targetCategory, name, task, key) {
+   const taskKey = IsValidString(key) ? key : GenerateTaskKey();
    const layoutOrder = GetLength(data[targetCategory].Items);
    
    const taskElement = Instance("div", {
@@ -141,29 +193,24 @@ function CreateTask(targetCategory, name, task) {
    data[targetCategory].Items[taskKey] = layoutOrder;
    taskElement.Parent = data[targetCategory].Element;
    
+   SaveTasks();
    MakeDraggable(taskElement);
 }
 
-function SaveTasks() {
-   function DeepCopyTasks(object) {
-      const copiedObject = {}
+function RemoveTask(taskKey) {
+   AdjustOrder(taskKey);
+   
+   delete data[tasks[taskKey].Category].Items[taskKey];
+   
+   tasks[taskKey].Element.Destroy();
+   delete tasks[taskKey];
 
-      ForTable(object, function(key, index, value) {
-         if (IsTable(value)) {
-            copiedObject[key] = DeepCopyTasks(value)
-         } else if (key !== "Element") {
-            copiedObject[key] = value
-         }
-      })
-      
-      return copiedObject;
-   }
-
-   localStorage.setItem('savedTasksTest', JSON.stringify(DeepCopyTasks(tasks)));
+   SaveTasks();
 }
 
 function LoadTasks() {
-   const testSave = JSON.parse(localStorage.getItem('savedTasksTest'));
+   const storedData = localStorage.getItem("savedTasksTest");
+   const testSave = IsValidString(storedData) ? JSON.parse(storedData) : {};
    const filteredTasks = {}
    
    ForTable(testSave, function(key, index, value) {
@@ -185,8 +232,8 @@ function LoadTasks() {
    })
 
    ForTable(filteredTasks, function(category, index, categoryValue) {
-      ForTable(categoryValue, function(task, index, taskValue) {
-         CreateTask(category, taskValue.Name, taskValue.Task);
+      ForTable(categoryValue, function(key, index, taskValue) {
+         AddTask(category, taskValue.Name, taskValue.Task, key);
       })
    })
 }
@@ -196,21 +243,47 @@ for(let i = 0; i < categories.length; i++) {
 }
 
 for(let i = 1; i <= 3; i++) {
-   CreateTask(categories[0], FormatString("Eve-%s", i), "Kemi")
+   //AddTask(categories[0], FormatString("Eve-%s", i), "Kemi")
 }
 
-//LoadTasks();
+LoadTasks();
 SetupModal();
 
 const visualizer = {
-   "Category": null,
-   "Element": null
+   "Category": undefined,
+   "Element": undefined
+};
+
+const taskPopup = {
+   "Element": undefined,
+   "Task": undefined
 };
 
 function CheckBounds(targetElement, position) {
    const targetRect = targetElement.getBoundingClientRect();
    
    return (position.X >= targetRect.left && position.X <= targetRect.right && position.Y >= targetRect.top && position.Y <= targetRect.bottom);
+}
+
+function DestroyTaskPopup() {
+   if (taskPopup.Element != null) {
+      taskPopup.Element.Destroy();
+      taskPopup.Element = undefined;
+   }
+
+   if (taskPopup.Task != null) {
+      taskPopup.Task = undefined;
+   }
+}
+
+function HandlePopupClick(event) {
+   if ( !(taskPopup.Element && taskPopup.Element.contains(event.target)) ) {
+      document.removeEventListener("click", HandlePopupClick);
+
+      DestroyTaskPopup();
+
+      return;
+   }
 }
 
 function MakeDraggable(element) {
@@ -272,6 +345,40 @@ function MakeDraggable(element) {
       visualizer.Element.SetParent(element, "afterend");
    }
 
+   function CreateTaskPopup(event) {
+      DestroyTaskPopup();
+
+      const mouseX = event.clientX;
+      const mouseY = event.clientY;
+
+      taskPopup.Task = element.Id;
+      taskPopup.Element = Instance("div", {
+         "Class": "task-popup"
+      }, document.body);
+
+      const popupButton = Instance("button", {
+         "Text": "X"
+      }, taskPopup.Element);
+
+      popupButton.addEventListener('click', function() {
+         document.removeEventListener("click", HandlePopupClick);
+         
+         RemoveTask(taskPopup.Task);
+
+         DestroyTaskPopup();
+      });
+      
+      const popupRect = taskPopup.Element.getBoundingClientRect();
+      
+      taskPopup.Element.Style = {
+         "top": (mouseY - popupRect.height) + "px",
+         "left": (mouseX) + "px"
+      }
+      
+      document.removeEventListener("click", HandlePopupClick);
+      document.addEventListener("click", HandlePopupClick);
+   }
+
    function ResetProperties() {
       element.RemoveProperties("position", "top", "left", "z-index", "outline", "width", "height", "box-sizing");
    }
@@ -285,29 +392,11 @@ function MakeDraggable(element) {
       Visualize(event);
    }
 
-   function AdjustOrder() {
-      const previousItems = data[tasks[element.Id].Category].Items;
-      const previousItemsCount = GetLength(previousItems);
-      const elementLayoutOrder = tasks[element.Id].LayoutOrder;
-      
-      for (let i = elementLayoutOrder + 1; i < previousItemsCount; i++) {
-         const taskKey = GetKey(previousItems, i);
-         
-         UpdateOrder(taskKey, -1 + tasks[taskKey].LayoutOrder);
-      }
-   }
-
    function UpdateCategory(targetKey, category) {
       delete data[tasks[targetKey].Category].Items[targetKey];
       tasks[targetKey].Category = category;
 
       tasks[targetKey].Element.Parent = data[category].Element;
-   }
-
-   function UpdateOrder(targetKey, order) {
-      tasks[targetKey].LayoutOrder = order;
-      tasks[targetKey].Element.style.order = tasks[targetKey].LayoutOrder;
-      data[tasks[targetKey].Category].Items[targetKey] = tasks[targetKey].LayoutOrder;
    }
 
    function GetClosestKey(event, items, sameColumn) {
@@ -459,7 +548,7 @@ function MakeDraggable(element) {
          let [closestKey, direction] = GetClosestKey(event, value.Items, sameColumn);
          
          if (insideHead || itemsCount == 0 || !closestKey) {
-            AdjustOrder();
+            AdjustOrder(element.Id);
             
             if (sameColumn) {
                UpdateOrder(element.Id, -1 + itemsCount);
@@ -505,7 +594,7 @@ function MakeDraggable(element) {
          } else {
             const keyOrders = {}
             
-            AdjustOrder();
+            AdjustOrder(element.Id);
             
             for (let i = keyLayoutOrder; i < itemsCount; i++) {
                const taskKey = GetKey(value.Items, i);
@@ -527,6 +616,7 @@ function MakeDraggable(element) {
          visualizer.Element = undefined;
       }
 
+      SaveTasks();
       ResetProperties();
    }
 
@@ -564,30 +654,7 @@ function MakeDraggable(element) {
       } else if (event.button === 2 && rigthClick) {
          console.log("Right click");
          
-         const mouseX = event.clientX;
-         const mouseY = event.clientY;
-
-         const targetElement = Instance("div", {
-            "Class": "popup",
-            "Style": {
-               "display": "block",
-               "position": "absolute",
-               "heigh": "50px",
-               "width": "100px",
-               "backgroundColor": "#fff",
-               "border": "1px solid #ccc",
-               "padding": "10px",
-               "boxShadow": "0px 4px 6px rgba(0, 0, 0, 0.1)",
-               "zIndex": "1000"
-           }
-         }, document.body);
-         
-         const targetRect = targetElement.getBoundingClientRect();
-         
-         targetElement.Style = {
-            "top": (mouseY - targetRect.height) + 'px',
-            "left": (mouseX - targetRect.width) + 'px'
-         }
+         CreateTaskPopup(event);
       }
    }
 
